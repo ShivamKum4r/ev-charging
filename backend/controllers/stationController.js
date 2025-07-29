@@ -2,6 +2,7 @@
 const Station = require('../models/Station');
 const Review = require('../models/Review');
 
+// Major Indian EV charging networks: Tata Power, Ather Grid, Fortum, Statiq, ChargeZone, Zeon
 const getAllStations = async (req, res) => {
   try {
     const {

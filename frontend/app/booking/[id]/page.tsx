@@ -13,9 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const stationData = {
   id: 1,
-  name: "PowerHub Central",
-  address: "123 Main St, Downtown",
-  price: 12,
+  name: "Tata Power EZ Charge",
+  address: "Connaught Place, New Delhi",
+  price: 10,
   type: "DC Fast Charging",
 }
 
