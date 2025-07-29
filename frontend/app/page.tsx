@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, MapPin, Zap, Star, Filter, Car, Navigation, Clock, Loader2 } from "lucide-react"
+import { MapPin, Filter, Search, Zap, Clock, Star, Navigation, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { calculateDistance, formatDistance } from "@/lib/utils"
@@ -21,8 +21,8 @@ const mockStations = [
     available: "4/6",
     rating: 4.5,
     image: "/placeholder.svg?height=200&width=300",
-    lat: 34.0522, // Example latitude
-    lng: -118.2437, // Example longitude
+    lat: 28.6139,
+    lng: 77.2090,
   },
   {
     id: 2,
@@ -34,8 +34,8 @@ const mockStations = [
     available: "2/4",
     rating: 4.2,
     image: "/placeholder.svg?height=200&width=300",
-    lat: 34.0522, // Example latitude
-    lng: -118.2437, // Example longitude
+    lat: 28.6304,
+    lng: 77.2177,
   },
   {
     id: 3,
@@ -47,8 +47,8 @@ const mockStations = [
     available: "6/8",
     rating: 4.8,
     image: "/placeholder.svg?height=200&width=300",
-    lat: 34.0522, // Example latitude
-    lng: -118.2437, // Example longitude
+    lat: 28.5965,
+    lng: 77.2006,
   },
 ]
 
@@ -59,35 +59,89 @@ export default function HomePage() {
   const [userLocation, setUserLocation] = useState(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState(null)
+  const [watchId, setWatchId] = useState<number | null>(null)
 
   useEffect(() => {
-    // Optionally, load the user's location on component mount
-    // getCurrentLocation();
+    // Auto-get location on mount
+    getCurrentLocation()
+
+    // Cleanup watch on unmount
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
   }, [])
 
   const getCurrentLocation = () => {
     setLocationLoading(true)
     setLocationError(null)
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
-          setLocationLoading(false)
-        },
-        (error) => {
-          setLocationError("Failed to retrieve location.")
-          setLocationLoading(false)
-          console.error("Geolocation error:", error)
-        }
-      )
-    } else {
+    if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by this browser.")
       setLocationLoading(false)
+      return
     }
+
+    // Get current position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        }
+        setUserLocation(newLocation)
+        setLocationLoading(false)
+
+        // Start watching for location changes
+        const id = navigator.geolocation.watchPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            })
+          },
+          (error) => {
+            console.error("Location watch error:", error)
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000, // Cache for 1 minute
+          }
+        )
+        setWatchId(id)
+      },
+      (error) => {
+        let errorMessage = "Failed to retrieve location."
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied by user."
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable."
+            break
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out."
+            break
+        }
+        setLocationError(errorMessage)
+        setLocationLoading(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    )
+  }
+
+  const stopLocationTracking = () => {
+    if (watchId) {
+      navigator.geolocation.clearWatch(watchId)
+      setWatchId(null)
+    }
+    setUserLocation(null)
   }
 
   return (
@@ -148,19 +202,32 @@ export default function HomePage() {
                   <div className="text-gray-500 text-sm">Location not available</div>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
+              <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
                 onClick={getCurrentLocation}
                 disabled={locationLoading}
+                className="md:w-auto"
               >
                 {locationLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Navigation className="h-4 w-4 mr-2" />
                 )}
                 {locationLoading ? "Getting Location..." : "Use My Location"}
               </Button>
+
+              {userLocation && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={stopLocationTracking}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Stop Tracking
+                </Button>
+              )}
+            </div>
             </div>
           </div>
 
@@ -217,11 +284,10 @@ export default function HomePage() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Nearby Charging Stations</h2>
               {mockStations.map((station) => {
-                let distanceToShow = "Distance Unavailable"
-                if (userLocation) {
-                  const distance = calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng)
-                  distanceToShow = formatDistance(distance)
-                }
+                const distance = userLocation 
+                  ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng)
+                  : null
+
                 return (
                 <Card key={station.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
@@ -241,15 +307,25 @@ export default function HomePage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className="flex items-center">
+                            <div className="flex items-center mb-1">
                               <Star className="h-4 w-4 text-yellow-400 fill-current" />
                               <span className="text-sm ml-1">{station.rating}</span>
                             </div>
-                            <span className="text-xs text-gray-500 flex items-center">
-                              <Navigation className="h-3 w-3 mr-1" />
-                              {distanceToShow}
-                            </span>
+                            {distance && (
+                              <div className="flex items-center text-xs text-blue-600">
+                                <Navigation className="h-3 w-3 mr-1" />
+                                {formatDistance(distance)}
+                              </div>
+                            )}
                           </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 mb-3">
+                          <Badge variant="secondary">{station.type}</Badge>
+                          {!userLocation && (
+                            <span className="text-sm text-gray-600">{station.distance}</span>
+                          )}
+                          <span className="text-sm font-medium text-green-600">{station.price}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 mt-3">
                           <div className="flex items-center text-xs text-gray-600">
