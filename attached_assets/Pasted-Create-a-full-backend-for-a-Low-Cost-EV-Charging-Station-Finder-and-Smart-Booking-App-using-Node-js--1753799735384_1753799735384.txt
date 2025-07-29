@@ -1,0 +1,55 @@
+Create a full backend for a Low-Cost EV Charging Station Finder and Smart Booking App using Node.js and Express.js.
+
+Features and endpoints required:
+
+1. **Auth Routes**
+   - POST /api/auth/register — user registration (with role: user or provider)
+   - POST /api/auth/login — user login
+   - GET /api/auth/profile — get logged-in user profile
+
+2. **Station Routes**
+   - GET /api/stations — list all charging stations with filters (location, price, chargerType, availability)
+   - GET /api/stations/:id — get details of a specific station
+   - POST /api/stations — add a new station (provider only)
+   - PUT /api/stations/:id — update station info (provider only)
+   - DELETE /api/stations/:id — delete station (provider only)
+
+3. **Booking Routes**
+   - POST /api/bookings — create a new booking (stationId, timeSlot, vehicleInfo)
+   - GET /api/bookings — get all bookings for current user
+   - GET /api/bookings/station/:stationId — get bookings for a station (provider only)
+   - PUT /api/bookings/:id/cancel — cancel booking
+
+4. **Wallet & Payment Routes**
+   - GET /api/wallet — view user wallet balance
+   - POST /api/wallet/topup — add money to wallet
+   - POST /api/wallet/pay — deduct booking payment
+
+5. **Review & Rating Routes**
+   - POST /api/reviews — post a review for a station (after booking)
+   - GET /api/reviews/:stationId — get all reviews for a station
+
+6. **Admin Routes (optional)**
+   - GET /api/admin/users — list all users
+   - GET /api/admin/bookings — list all bookings
+
+Use:
+- Express.js for routing
+- MongoDB with Mongoose for the database
+- JWT for authentication
+- dotenv for env variables
+- bcrypt for password hashing
+- cors and helmet for security
+- Joi or express-validator for request validation
+
+Directory structure:
+- /models — MongoDB schemas for User, Station, Booking, Wallet, Review
+- /routes — All route files
+- /controllers — Route handlers
+- /middlewares — Auth middleware, error handler
+- /config — DB connection
+- server.js — Entry point
+
+Use .env for secret keys and MongoDB URI.
+
+Make sure the app is modular, follows REST principles, and is ready for deployment on Replit or Render.
