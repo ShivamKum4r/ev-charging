@@ -261,7 +261,14 @@ export default function StationDetailsPage({ params }: { params: { id: string } 
                   </Button>
                 </Link>
 
-                <Button variant="outline" className="w-full bg-transparent">
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-transparent"
+                  onClick={() => {
+                    const address = encodeURIComponent(stationData.address);
+                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                  }}
+                >
                   <Navigation className="h-4 w-4 mr-2" />
                   Get Directions
                 </Button>

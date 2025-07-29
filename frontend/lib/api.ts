@@ -71,8 +71,20 @@ export class ApiClient {
   }
 
   // Station methods
-  async getStations(filters?: any) {
-    const queryParams = filters ? `?${new URLSearchParams(filters)}` : '';
+  async getStations(filters?: any, userLocation?: {lat: number, lng: number}) {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        if (filters[key]) params.append(key, filters[key]);
+      });
+    }
+    
+    if (userLocation) {
+      params.append('location', `${userLocation.lat},${userLocation.lng}`);
+    }
+    
+    const queryParams = params.toString() ? `?${params.toString()}` : '';
     return this.request(`/stations${queryParams}`);
   }
 

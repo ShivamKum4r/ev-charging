@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { MapPin, Filter, Search, Zap, Clock, Star, Navigation } from "lucide-react"
+import { Search, MapPin, Zap, Star, Filter, Car, Navigation, Clock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { calculateDistance, formatDistance } from "@/lib/utils"
 
 const mockStations = [
   {
@@ -20,6 +21,8 @@ const mockStations = [
     available: "4/6",
     rating: 4.5,
     image: "/placeholder.svg?height=200&width=300",
+    lat: 34.0522, // Example latitude
+    lng: -118.2437, // Example longitude
   },
   {
     id: 2,
@@ -31,6 +34,8 @@ const mockStations = [
     available: "2/4",
     rating: 4.2,
     image: "/placeholder.svg?height=200&width=300",
+    lat: 34.0522, // Example latitude
+    lng: -118.2437, // Example longitude
   },
   {
     id: 3,
@@ -42,6 +47,8 @@ const mockStations = [
     available: "6/8",
     rating: 4.8,
     image: "/placeholder.svg?height=200&width=300",
+    lat: 34.0522, // Example latitude
+    lng: -118.2437, // Example longitude
   },
 ]
 
@@ -49,6 +56,39 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [priceFilter, setPriceFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState(null)
+
+  useEffect(() => {
+    // Optionally, load the user's location on component mount
+    // getCurrentLocation();
+  }, [])
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true)
+    setLocationError(null)
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+          setLocationLoading(false)
+        },
+        (error) => {
+          setLocationError("Failed to retrieve location.")
+          setLocationLoading(false)
+          console.error("Geolocation error:", error)
+        }
+      )
+    } else {
+      setLocationError("Geolocation is not supported by this browser.")
+      setLocationLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,10 +131,37 @@ export default function HomePage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="md:w-auto bg-transparent">
-              <Navigation className="h-4 w-4 mr-2" />
-              Use Current Location
-            </Button>
+
+            {/* Location Controls */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                {userLocation ? (
+                  <div className="flex items-center text-green-600">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span className="text-sm">
+                      Location: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+                    </span>
+                  </div>
+                ) : locationError ? (
+                  <div className="text-red-600 text-sm">{locationError}</div>
+                ) : (
+                  <div className="text-gray-500 text-sm">Location not available</div>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={getCurrentLocation}
+                disabled={locationLoading}
+              >
+                {locationLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Navigation className="h-4 w-4 mr-2" />
+                )}
+                {locationLoading ? "Getting Location..." : "Use My Location"}
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-4">
@@ -149,7 +216,13 @@ export default function HomePage() {
           <div className="order-1 lg:order-2">
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Nearby Charging Stations</h2>
-              {mockStations.map((station) => (
+              {mockStations.map((station) => {
+                let distanceToShow = "Distance Unavailable"
+                if (userLocation) {
+                  const distance = calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng)
+                  distanceToShow = formatDistance(distance)
+                }
+                return (
                 <Card key={station.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex gap-4">
@@ -172,29 +245,38 @@ export default function HomePage() {
                               <Star className="h-4 w-4 text-yellow-400 fill-current" />
                               <span className="text-sm ml-1">{station.rating}</span>
                             </div>
+                            <span className="text-xs text-gray-500 flex items-center">
+                              <Navigation className="h-3 w-3 mr-1" />
+                              {distanceToShow}
+                            </span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-4 mb-3">
-                          <Badge variant="secondary">{station.type}</Badge>
-                          <span className="text-sm text-gray-600">{station.distance}</span>
-                          <span className="text-sm font-medium text-green-600">{station.price}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-sm">
-                            <Clock className="h-4 w-4 mr-1 text-green-500" />
-                            <span className="text-green-600">{station.available} available</span>
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Zap className="h-3 w-3 mr-1" />
+                            {station.type}
                           </div>
-                          <Link href={`/station/${station.id}`}>
-                            <Button size="sm">View Details</Button>
-                          </Link>
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Car className="h-3 w-3 mr-1" />
+                            {station.available}
+                          </div>
+                          <div className="flex items-center text-xs font-medium text-green-600">
+                            <span>{station.price}</span>
+                          </div>
+                          <div className="flex justify-end">
+                            <Link href={`/station/${station.id}`}>
+                              <Button size="sm" variant="outline">
+                                View Details
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
