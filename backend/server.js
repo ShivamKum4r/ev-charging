@@ -40,7 +40,11 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ev-chargi
   useUnifiedTopology: true,
 })
 .then(() => console.log('MongoDB connected'))
-.catch(err => console.log('MongoDB connection error:', err));
+.catch(err => {
+  console.log('MongoDB connection error:', err.message);
+  console.log('Server will continue running but database operations will fail.');
+  console.log('Please set up a database connection in the Database tab.');
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
