@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { MapPin, Filter, Search, Zap, Clock, Star, Navigation, Loader2 } from "lucide-react"
+import { MapPin, Filter, Search, Zap, Clock, Star, Navigation, Loader2, Car } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
