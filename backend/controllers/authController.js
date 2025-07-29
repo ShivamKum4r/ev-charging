@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const { client } = require('../config/googleAuth');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -107,9 +108,72 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // Check if user exists
+    let user = await User.findOne({ 
+      $or: [{ email }, { googleId }] 
+    });
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        avatar: picture,
+        role: 'user',
+        isVerified: true
+      });
+
+      // Create wallet for new user
+      await Wallet.create({
+        user: user._id,
+        balance: 0
+      });
+    } else if (!user.googleId) {
+      // Link existing account with Google
+      user.googleId = googleId;
+      user.avatar = picture;
+      await user.save();
+    }
+
+    const authToken = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token: authToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        avatar: user.avatar,
+        preferences: user.preferences
+      }
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(400).json({ message: 'Invalid Google token', error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
+  googleLogin,
   getProfile,
   updateProfile
 };

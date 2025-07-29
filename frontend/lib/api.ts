@@ -1,7 +1,22 @@
-
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
   : 'http://localhost:3000/api';
+
+export const googleAuth = async (token: string) => {
+  const response = await fetch(`${API_BASE_URL}/auth/google`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Google authentication failed');
+  }
+
+  return response.json();
+};
 
 export class ApiClient {
   private baseURL: string;
@@ -73,17 +88,17 @@ export class ApiClient {
   // Station methods
   async getStations(filters?: any, userLocation?: {lat: number, lng: number}) {
     const params = new URLSearchParams();
-    
+
     if (filters) {
       Object.keys(filters).forEach(key => {
         if (filters[key]) params.append(key, filters[key]);
       });
     }
-    
+
     if (userLocation) {
       params.append('location', `${userLocation.lat},${userLocation.lng}`);
     }
-    
+
     const queryParams = params.toString() ? `?${params.toString()}` : '';
     return this.request(`/stations${queryParams}`);
   }
