@@ -136,6 +136,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <div id="google-signin-button" className="w-full flex justify-center"></div>
                   <Button 
                     variant="outline" 
                     className="w-full bg-transparent"
@@ -244,6 +245,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <div id="google-signin-button" className="w-full flex justify-center"></div>
                   <Button 
                     variant="outline" 
                     className="w-full bg-transparent"

@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
-  : 'http://localhost:3000/api';
+  : 'http://localhost:3001/api';</old_str>
 
 export const googleAuth = async (token: string) => {
   const response = await fetch(`${API_BASE_URL}/auth/google`, {

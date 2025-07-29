@@ -90,3 +90,57 @@ const schemas = {
 };
 
 module.exports = { validateRequest, schemas };
+const joi = require('joi');
+
+const validateRequest = (schema) => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        details: error.details[0].message 
+      });
+    }
+    next();
+  };
+};
+
+const schemas = {
+  register: joi.object({
+    name: joi.string().required().min(2).max(50),
+    email: joi.string().required().email(),
+    password: joi.string().required().min(6),
+    phone: joi.string().required().min(10),
+    role: joi.string().valid('user', 'provider', 'admin').default('user')
+  }),
+
+  login: joi.object({
+    email: joi.string().required().email(),
+    password: joi.string().required()
+  }),
+
+  station: joi.object({
+    name: joi.string().required(),
+    address: joi.string().required(),
+    location: joi.object({
+      type: joi.string().valid('Point').required(),
+      coordinates: joi.array().items(joi.number()).length(2).required()
+    }),
+    chargerTypes: joi.array().items(joi.object({
+      type: joi.string().required(),
+      power: joi.number().required(),
+      count: joi.number().required()
+    })),
+    pricing: joi.object({
+      price: joi.number().required(),
+      currency: joi.string().default('INR')
+    }),
+    amenities: joi.array().items(joi.string()),
+    operatingHours: joi.object({
+      open: joi.string().required(),
+      close: joi.string().required()
+    })
+  })
+};
+
+module.exports = { validateRequest, schemas };
